@@ -140,7 +140,9 @@ public class SkinManagerImpl implements NSkinManager<SkinManager> {
     public void restoreDefault(NOnSkinChangeListener listener) {
         if (prefUtils != null){
             manager().changeSkin(prefUtils.getSuffix());
-            listener.onSkinChanged();
+            if (listener != null){
+                listener.onSkinChanged();
+            }
         }
     }
 
