@@ -150,6 +150,6 @@ public class SkinManagerImpl implements NSkinManager<SkinManager> {
             prefUtils.clear();
         }
         mIsDefaultMode = true;
-        refreshSkin(null);
+        manager().removeAnySkin();
     }
 }
