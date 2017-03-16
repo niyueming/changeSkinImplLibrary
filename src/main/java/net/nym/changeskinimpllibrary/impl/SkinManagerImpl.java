@@ -11,9 +11,14 @@
 
 package net.nym.changeskinimpllibrary.impl;
 
+import android.app.Activity;
 import android.content.Context;
+import android.text.TextUtils;
+import android.view.View;
 
 import com.zhy.changeskin.SkinManager;
+import com.zhy.changeskin.callback.ISkinChangingCallback;
+import com.zhy.changeskin.utils.PrefUtils;
 
 import net.nym.changeskinlibrary.operation.NOnSkinChangeListener;
 import net.nym.changeskinlibrary.operation.NSkinManager;
@@ -27,15 +32,19 @@ import net.nym.changeskinlibrary.operation.NSkinManager;
 public class SkinManagerImpl implements NSkinManager<SkinManager> {
     private static NSkinManager<SkinManager> my;
     private SkinManager mManager;
+    private PrefUtils prefUtils;
+    private boolean mIsDefaultMode = true;
 
     private SkinManagerImpl(Context context){
-        init();
+        manager();
+        prefUtils = new PrefUtils(context.getApplicationContext());
     }
 
-    private void init() {
+    private SkinManager manager() {
         if (mManager == null){
             mManager = SkinManager.getInstance();
         }
+        return mManager;
     }
 
     public static NSkinManager<SkinManager> getInstance(Context context){
@@ -51,27 +60,96 @@ public class SkinManagerImpl implements NSkinManager<SkinManager> {
 
     @Override
     public SkinManager getManager() {
-        init();
-        return mManager;
+        return manager();
     }
 
     @Override
     public void switchSkinMode(NOnSkinChangeListener listener) {
-
+        mIsDefaultMode = !mIsDefaultMode;
+        refreshSkin(listener);
     }
 
     @Override
-    public void refreshSkin(NOnSkinChangeListener listener) {
+    public void refreshSkin(final NOnSkinChangeListener listener) {
+        if (mIsDefaultMode) {
+            //恢复到默认皮肤
+            restoreDefault(listener);
+        } else if (prefUtils != null){
+            if (!TextUtils.isEmpty(prefUtils.getPluginPath())){
+                changeSkin(listener);
+            }
+        }
+    }
 
+    private void changeSkin(final NOnSkinChangeListener listener) {
+        manager().changeSkin(prefUtils.getPluginPath(), prefUtils.getPluginPkgName(),prefUtils.getSuffix(), new ISkinChangingCallback() {
+            @Override
+            public void onStart() {
+                System.out.println("换肤开始");
+            }
+
+            @Override
+            public void onError(Exception e) {
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onComplete() {
+                if (listener != null){
+                    listener.onSkinChanged();
+                }
+            }
+        });
     }
 
     @Override
-    public void register(Context context) {
-
+    public void changeSkin(String skinPath, String skinPkgName, String suffix, NOnSkinChangeListener listener) {
+        if (prefUtils != null){
+            mIsDefaultMode = false;
+            prefUtils.putPluginPath(skinPath);
+            prefUtils.putPluginPkg(skinPkgName);
+            prefUtils.putPluginSuffix(suffix);
+            changeSkin(listener);
+        }
     }
 
     @Override
-    public void unregister(Context context) {
+    public void changeSkin(String suffix, NOnSkinChangeListener listener) {
+        if (prefUtils != null){
+            prefUtils.putPluginSuffix(suffix);
+            refreshSkin(listener);
+        }
+    }
 
+    @Override
+    public void register(Activity activity) {
+        manager().register(activity);
+    }
+
+    @Override
+    public void unregister(Activity activity) {
+        manager().unregister(activity);
+    }
+
+    @Override
+    public void injectSkin(View view) {
+        manager().injectSkin(view);
+    }
+
+    @Override
+    public void restoreDefault(NOnSkinChangeListener listener) {
+        if (prefUtils != null){
+            manager().changeSkin(prefUtils.getSuffix());
+            listener.onSkinChanged();
+        }
+    }
+
+    @Override
+    public void clear() {
+        if (prefUtils != null){
+            prefUtils.clear();
+        }
+        mIsDefaultMode = true;
+        refreshSkin(null);
     }
 }
