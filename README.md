@@ -21,9 +21,10 @@
 
 tag属性分为3部分组成：
 
-skin
-资源的名称，即插件包中资源的名称，需要与当前app内使用的资源名称一致。
-支持的属性，目前支持src,background,textColor,支持扩展。
+ - skin
+ - 资源的名称，即插件包中资源的名称，需要与当前app内使用的资源名称一致。
+ - 支持的属性，目前支持src,background,textColor,支持扩展。src和background是R.drawable/mipmap.*
+
 3部分，必须以:分隔拼接。
 
 简言之：如果你哪个View需要换肤，就添加tag属性，tag值按照上述方式设置即可。
